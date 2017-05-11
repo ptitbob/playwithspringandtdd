@@ -1,0 +1,10 @@
+version: '2'
+
+services:
+  postgresql:
+    build:
+      context: postgresql/.
+    image: shipstone/spring-data
+    container_name: spring-data
+    ports:
+      - 5432:5432
