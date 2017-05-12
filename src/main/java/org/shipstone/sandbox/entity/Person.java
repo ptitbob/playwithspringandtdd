@@ -6,6 +6,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 
 /**
@@ -24,5 +26,14 @@ public class Person {
   @GeneratedValue(generator = "personSequence")
   private Long id;
 
+  @Column(length = 100)
+  private String firstname;
+
+  @Column(length = 100)
+  private String lastname;
+
+  @OneToOne
+  @JoinColumn(name = "main_address_id", referencedColumnName = "address_id")
+  private Address mainAddress;
 
 }

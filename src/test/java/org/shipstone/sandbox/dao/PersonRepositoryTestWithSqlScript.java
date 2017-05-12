@@ -1,9 +1,5 @@
 package org.shipstone.sandbox.dao;
 
-import com.github.springtestdbunit.DbUnitTestExecutionListener;
-import com.github.springtestdbunit.annotation.DatabaseOperation;
-import com.github.springtestdbunit.annotation.DatabaseSetup;
-import com.github.springtestdbunit.annotation.DatabaseTearDown;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.shipstone.sandbox.entity.Address;
@@ -13,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
@@ -33,13 +30,14 @@ import static org.junit.Assert.assertTrue;
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class,
     DirtiesContextTestExecutionListener.class,
     TransactionalTestExecutionListener.class,
-    DbUnitTestExecutionListener.class
+    SqlScriptsTestExecutionListener.class
 })
-@DatabaseSetup(PersonRepositoryTestWithDBUnit.DATASETS_PERSON_01_XML)
-@DatabaseTearDown(type = DatabaseOperation.DELETE_ALL, value = {PersonRepositoryTestWithDBUnit.DATASETS_PERSON_01_XML})
-public class PersonRepositoryTestWithDBUnit {
+@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = {PersonRepositoryTestWithSqlScript.DATASETS_PERSON_01_SQL})
+@Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, scripts = {PersonRepositoryTestWithSqlScript.DATASETS_CLEAR_ALL_SQL})
+public class PersonRepositoryTestWithSqlScript {
 
-  static final String DATASETS_PERSON_01_XML = "/datasets/person-01.xml";
+  static final String DATASETS_PERSON_01_SQL = "/datasets/person-01.sql";
+  static final String DATASETS_CLEAR_ALL_SQL = "/datasets/clear-all.sql";
 
   @Autowired
   private PersonRepository personRepository;
@@ -54,7 +52,6 @@ public class PersonRepositoryTestWithDBUnit {
     Person person = personRepository.findOne(1L);
     assertNotNull("La personne ne doit pas être null", person);
     assertEquals("Le nom de la personne renvoyé doit être exacte", "Stark", person.getLastname());
-    assertEquals("Le prenom de la personne renvoyé doit être exacte", "Anthony", person.getFirstname());
   }
 
   @Test
@@ -70,4 +67,6 @@ public class PersonRepositoryTestWithDBUnit {
     assertNotNull(person.getMainAddress());
     assertEquals("L'identifiant de l'adresse doit être le bon", new Long(1L), person.getMainAddress().getId());
   }
+
+
 }
