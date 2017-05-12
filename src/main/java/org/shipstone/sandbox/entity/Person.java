@@ -16,7 +16,8 @@ import javax.persistence.SequenceGenerator;
 @Entity
 @SequenceGenerator(
     name = "personSequence",
-    sequenceName = "PERSON_SEQ"
+    sequenceName = "PERSON_SEQ",
+    allocationSize = 1
 )
 @Data
 public class Person {
