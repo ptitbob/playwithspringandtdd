@@ -31,7 +31,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringJUnit4ClassRunner.class)
 @DataJpaTest
 @TestExecutionListeners({DependencyInjectionTestExecutionListener.class,
-    DirtiesContextTestExecutionListener.class,
     TransactionalTestExecutionListener.class,
     DbUnitTestExecutionListener.class
 })
