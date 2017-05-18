@@ -8,7 +8,9 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 /**
  * @author François Robert
@@ -23,12 +25,17 @@ public class LoggerInjector implements BeanPostProcessor {
 
   @Override
   public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-    ReflectionUtils.doWithFields(bean.getClass(), new ReflectionUtils.FieldCallback() {
-      public void doWith(Field field) throws IllegalArgumentException, IllegalAccessException {
-        ReflectionUtils.makeAccessible(field);// make sure the field accessible if defined private
-        if (field.getAnnotation(ShipstoneLogger.class) != null) {
-          Logger logger = LoggerFactory.getLogger(bean.getClass());
-          field.set(bean, logger);
+    ReflectionUtils.doWithFields(bean.getClass(), field -> {
+      final Annotation annotation = field.getAnnotation(ShipstoneLogger.class);
+      if (annotation != null) {
+        boolean fieldAccessible = field.isAccessible();
+        ReflectionUtils.makeAccessible(field);
+        Logger logger = LoggerFactory.getLogger(bean.getClass());
+        field.set(bean, logger);
+        if ((!Modifier.isPublic(field.getModifiers()) ||
+            !Modifier.isPublic(field.getDeclaringClass().getModifiers()) ||
+            Modifier.isFinal(field.getModifiers())) && !fieldAccessible) {
+          field.setAccessible(false);
         }
       }
     });
