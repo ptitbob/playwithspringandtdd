@@ -8,8 +8,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ReflectionUtils;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 /**
@@ -26,11 +24,16 @@ public class LoggerInjector implements BeanPostProcessor {
   @Override
   public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
     ReflectionUtils.doWithFields(bean.getClass(), field -> {
-      final Annotation annotation = field.getAnnotation(ShipstoneLogger.class);
+      final ShipstoneLogger annotation = field.getAnnotation(ShipstoneLogger.class);
       if (annotation != null) {
         boolean fieldAccessible = field.isAccessible();
         ReflectionUtils.makeAccessible(field);
-        Logger logger = LoggerFactory.getLogger(bean.getClass());
+        Logger logger;
+        if ("".equals(annotation.name().trim())) {
+          logger = LoggerFactory.getLogger(bean.getClass());
+        } else {
+          logger = LoggerFactory.getLogger(annotation.name());
+        }
         field.set(bean, logger);
         if ((!Modifier.isPublic(field.getModifiers()) ||
             !Modifier.isPublic(field.getDeclaringClass().getModifiers()) ||

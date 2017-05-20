@@ -14,4 +14,7 @@ import static java.lang.annotation.ElementType.FIELD;
 @Target(FIELD)
 @Documented
 public @interface ShipstoneLogger {
+
+  String name() default "";
+
 }
