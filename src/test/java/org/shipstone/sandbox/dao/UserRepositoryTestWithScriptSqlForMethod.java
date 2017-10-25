@@ -188,6 +188,7 @@ public class UserRepositoryTestWithScriptSqlForMethod {
      */
     String _lastname = "Sta";
     String _firstname = "Anthony";
+    // TODO: 26/10/2017 A tester si c'est la propriété du POJO ou le champs SQL
     List<User> userList = userRepository.findAll(
         new DataSpecification<User>()
             .condition("lastname", LIKE, _lastname)
