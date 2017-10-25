@@ -23,10 +23,11 @@ import javax.persistence.Table;
     sequenceName = "PERSON_SEQ",
     allocationSize = 1
 )
+@Table(name = "WEB_USER")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Person {
+public class User {
 
   @Id
   @Column(name = "person_id")

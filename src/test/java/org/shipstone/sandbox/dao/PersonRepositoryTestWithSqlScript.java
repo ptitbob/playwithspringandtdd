@@ -63,5 +63,15 @@ public class PersonRepositoryTestWithSqlScript {
     assertEquals("L'identifiant de l'adresse doit être le bon", new Long(1L), person.getMainAddress().getId());
   }
 
+  @Test
+  public void create_person_should_be_done() {
+    Person person = new Person(null, "toto", "titi", null);
+    Person otherPerson = personRepository.saveAndFlush(person);
+    assertNotNull(otherPerson);
+    assertEquals(new Long(1L), otherPerson.getId());
+    person = new Person(null, "toto", "titi", null);
+    otherPerson = personRepository.saveAndFlush(person);
+    assertEquals(new Long(2L), otherPerson.getId());
+  }
 
 }

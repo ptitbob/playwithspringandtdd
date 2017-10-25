@@ -23,4 +23,7 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
       @Param("lastname") String lastname,
       Pageable pageable
   );
+
+  Person findByLastname(String lastname);
+
 }
