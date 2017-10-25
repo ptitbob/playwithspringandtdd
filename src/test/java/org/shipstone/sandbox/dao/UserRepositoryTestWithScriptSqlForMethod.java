@@ -4,16 +4,22 @@ import org.assertj.core.api.Condition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.shipstone.sandbox.entity.User;
+import org.shipstone.sandbox.entity.User_;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,4 +106,93 @@ public class UserRepositoryTestWithScriptSqlForMethod {
     ;
   }
 
+  @Test
+  @Sql("/datasets/PersonRepositoryTestWithScriptSqlForMethod-01.sql")
+  @Transactional()
+  public void use_query_like() {
+    Pageable pageable = new PageRequest(0, 2);
+    Page<User> userPage = userRepository.findByLastnameContaining("Sta", pageable);
+    assertThat(userPage.getContent())
+        .isNotNull()
+        .size().isEqualTo(1)
+        .returnToIterable()
+        .is(new Condition<List<? extends User>>() {
+          @Override
+          public boolean matches(List<? extends User> value) {
+            return value.get(0).getFirstname().equalsIgnoreCase("anthony");
+          }
+        });
+  }
+
+  @Test
+  @Sql("/datasets/PersonRepositoryTestWithScriptSqlForMethod-01.sql")
+  @Transactional()
+  public void use_specification_mustbe_done() {
+    /*
+    Utilisation du login de génération de source pour les "root" entity
+
+                <plugin>
+                <groupId>org.bsc.maven</groupId>
+                <artifactId>maven-processor-plugin</artifactId>
+                <version>2.2.4</version>
+                <executions>
+                    <execution>
+                        <id>process</id>
+                        <goals>
+                            <goal>process</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <processors>
+                                <processor>org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor</processor>
+                            </processors>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate-jpamodelgen</artifactId>
+                        <version>4.3.8.Final</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+     */
+    Specification<User> userSpecification = buildUserSearch("Stark", null);
+    List<User> userList = userRepository.findAll(userSpecification);
+    assertThat(userList)
+        .isNotNull()
+        .size().isEqualTo(1).returnToIterable()
+        .is(new Condition<List<? extends User>>() {
+          @Override
+          public boolean matches(List<? extends User> value) {
+            return value.get(0).getFirstname().equals("Anthony");
+          }
+        });
+  }
+
+  private Specification<User> buildUserSearch(String lastname, String firstname) {
+    return new Specification<User>() {
+      @Override
+      public Predicate toPredicate(Root<User> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
+        Predicate predicate = null;
+        predicate = buildPredicate(predicate, lastname, criteriaBuilder, criteriaBuilder.equal(root.get(User_.lastname), lastname));
+        predicate = buildPredicate(predicate, firstname, criteriaBuilder, criteriaBuilder.equal(root.get(User_.firstname), firstname));
+        return predicate;
+      }
+    };
+  }
+
+  private Predicate buildPredicate(
+      Predicate initialPredicate,
+      Object value,
+      CriteriaBuilder criteriaBuilder,
+      Predicate valuePredicate
+  ) {
+    if (value != null) {
+      return initialPredicate == null ? valuePredicate : criteriaBuilder.and(valuePredicate, initialPredicate);
+    }
+    return initialPredicate;
+  }
 }
