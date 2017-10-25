@@ -4,7 +4,6 @@ import org.assertj.core.api.Condition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.shipstone.sandbox.entity.User;
-import org.shipstone.sandbox.entity.User_;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Page;
@@ -16,6 +15,8 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -24,6 +25,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
+import static org.shipstone.sandbox.dao.DataSpecification.ValueOperation.EQUAL;
+import static org.shipstone.sandbox.dao.DataSpecification.ValueOperation.LIKE;
 
 /**
  * @author François Robert
@@ -172,13 +175,43 @@ public class UserRepositoryTestWithScriptSqlForMethod {
         });
   }
 
+  @PersistenceContext
+  private EntityManager entityManager;
+
+  @Test
+  @Sql("/datasets/PersonRepositoryTestWithScriptSqlForMethod-01.sql")
+  @Transactional()
+  public void use_DataSpecification_mustbe_done() {
+    /*
+    Peut être pas obligé de faire processing (plugin) des entité avec ce truc... :)
+    Effectivement, le processing d'entité n'est pas neccessaire !!
+     */
+    String _lastname = "Sta";
+    String _firstname = "Anthony";
+    List<User> userList = userRepository.findAll(
+        new DataSpecification<User>()
+            .condition("lastname", LIKE, _lastname)
+            .condition("firstname", EQUAL, _firstname)
+    );
+    assertThat(userList)
+        .isNotNull()
+        .size().isEqualTo(1).returnToIterable()
+        .is(new Condition<List<? extends User>>() {
+          @Override
+          public boolean matches(List<? extends User> value) {
+            return value.get(0).getFirstname().equals("Anthony");
+          }
+        });
+  }
+
   private Specification<User> buildUserSearch(String lastname, String firstname) {
     return new Specification<User>() {
       @Override
       public Predicate toPredicate(Root<User> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
         Predicate predicate = null;
-        predicate = buildPredicate(predicate, lastname, criteriaBuilder, criteriaBuilder.equal(root.get(User_.lastname), lastname));
-        predicate = buildPredicate(predicate, firstname, criteriaBuilder, criteriaBuilder.equal(root.get(User_.firstname), firstname));
+        // necessite l'ajout du plugin de processing d'entité
+        // predicate = buildPredicate(predicate, lastname, criteriaBuilder, criteriaBuilder.equal(root.get(User_.lastname), lastname));
+        // predicate = buildPredicate(predicate, firstname, criteriaBuilder, criteriaBuilder.equal(root.get(User_.firstname), firstname));
         return predicate;
       }
     };
@@ -195,4 +228,39 @@ public class UserRepositoryTestWithScriptSqlForMethod {
     }
     return initialPredicate;
   }
+
+  @Test
+  @Sql("/datasets/PersonRepositoryTestWithScriptSqlForMethod-01.sql")
+  @Transactional()
+  public void use_specificationBuilder_mustbe_done() {
+    /*
+    CE TEST PLANTE !!!
+
+    A voir pour faire un builder plus pratique !!
+     */
+    /*
+    String _lastname = "Sta";
+    String _firstname = "Anthony";
+    CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<User> userCriteriaQuery = criteriaBuilder.createQuery(User.class);
+    Root<User> userRoot = userCriteriaQuery.from(User.class);
+    SpecificationBuilder<User> userSpecificationBuilder = new SpecificationBuilder<>();
+    Specification<User> userSpecification = userSpecificationBuilder
+        .predicate(_lastname, criteriaBuilder.like(userRoot.get(User_.lastname), _lastname))
+        .predicate(_firstname, criteriaBuilder.equal(userRoot.get(User_.firstname), _firstname))
+        .build();
+    List<User> userList = userRepository.findAll(userSpecification);
+    assertThat(userList)
+        .isNotNull()
+        .size().isEqualTo(1).returnToIterable()
+        .is(new Condition<List<? extends User>>() {
+          @Override
+          public boolean matches(List<? extends User> value) {
+            return value.get(0).getFirstname().equals("Anthony");
+          }
+        });
+        */
+  }
+
+
 }
